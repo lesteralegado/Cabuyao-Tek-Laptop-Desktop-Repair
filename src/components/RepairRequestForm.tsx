@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import type { RepairRequestForm as FormType } from '../types/repair';
 import CustomerInformation from './CustomerInformation';
 import DeviceInformation from './DeviceInformation';
@@ -7,151 +9,112 @@ import ServiceSelection from './ServiceSelection';
 import ProblemDescription from './ProblemDescription';
 import ServiceMethod from './ServiceMethod';
 import RequestSummary from './RequestSummary';
-import { Loader2 } from 'lucide-react';
 import { createRepairRequest } from '../services/repairRequestService';
 
+const steps = ['Your details', 'The repair', 'Review'];
+const firstStepFields = new Set(['customerName', 'phone', 'email', 'contactMethod', 'deviceType', 'brand']);
 
-
-const RepairRequestForm: React.FC = () => {
+export default function RepairRequestForm() {
   const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [step, setStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSummary, setShowSummary] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const [formData, setFormData] = useState<FormType>({
-    customerName: '',
-    phone: '',
-    email: '',
-    contactMethod: '' as any,
-    deviceType: '' as any,
-    brand: '',
-    model: '',
-    serialNumber: '',
-    service: '',
-    problemDescription: '',
-    additionalNotes: '',
-    serviceMethod: '' as any,
+    customerName: '', phone: '', email: '', contactMethod: '' as FormType['contactMethod'],
+    deviceType: '' as FormType['deviceType'], brand: '', model: '', serialNumber: '',
+    service: '', problemDescription: '', additionalNotes: '', serviceMethod: '' as FormType['serviceMethod'],
   });
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field when user updates it
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.customerName.trim()) newErrors.customerName = 'Full name is required.';
-    if (formData.customerName.trim().length < 2) newErrors.customerName = 'Please enter a valid name.';
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required.';
-    } else if (!/^(09)\d{9}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Please enter a valid Philippine mobile number (e.g., 09XXXXXXXXX).';
+  const validate = (scope: 'first' | 'all'): boolean => {
+    const next: Record<string, string> = {};
+    if (!formData.customerName.trim()) next.customerName = 'Full name is required.';
+    else if (formData.customerName.trim().length < 2) next.customerName = 'Please enter your full name.';
+    if (!/^(09)\d{9}$/.test(formData.phone.trim())) next.phone = 'Enter an 11-digit mobile number starting with 09.';
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) next.email = 'Enter a valid email address.';
+    if (!formData.contactMethod) next.contactMethod = 'Choose how we should contact you.';
+    else if (formData.contactMethod === 'Email' && !formData.email) next.email = 'Enter an email address to use email contact.';
+    if (!formData.deviceType) next.deviceType = 'Choose a device type.';
+    if (!formData.brand) next.brand = 'Choose a brand.';
+    if (scope === 'all') {
+      if (!formData.service) next.service = 'Choose a service.';
+      if (!formData.problemDescription.trim()) next.problemDescription = 'Describe the problem.';
+      else if (formData.problemDescription.trim().length < 10) next.problemDescription = 'Add a little more detail about the problem.';
+      if (!formData.serviceMethod) next.serviceMethod = 'Choose a service method.';
     }
-
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address.';
+    const relevant = scope === 'first' ? Object.fromEntries(Object.entries(next).filter(([key]) => firstStepFields.has(key))) : next;
+    setErrors(relevant);
+    const first = Object.keys(relevant)[0];
+    if (first) {
+      if (step === 2) setStep(firstStepFields.has(first) ? 0 : 1);
+      window.setTimeout(() => document.getElementById(first)?.focus(), 0);
     }
-
-    if (!formData.contactMethod) {
-      newErrors.contactMethod = 'Preferred contact method is required.';
-    } else if (formData.contactMethod === 'Email' && !formData.email) {
-      newErrors.contactMethod = 'Please provide an email address if you prefer email contact.';
-    }
-
-    if (!formData.deviceType) newErrors.deviceType = 'Device type is required.';
-    if (!formData.brand) newErrors.brand = 'Brand is required.';
-    if (!formData.service) newErrors.service = 'Please select a service.';
-    if (!formData.problemDescription.trim()) {
-      newErrors.problemDescription = 'Please describe the problem.';
-    } else if (formData.problemDescription.trim().length < 10) {
-      newErrors.problemDescription = 'Please provide a more detailed description.';
-    }
-    if (!formData.serviceMethod) newErrors.serviceMethod = 'Please select a service method.';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return !first;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const goToStep = (next: number) => {
+    setStep(next);
+    setErrors({});
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    formRef.current?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' });
+  };
 
-    if (!validateForm()) return;
+  const handleContinue = () => {
+    if (validate(step === 0 ? 'first' : 'all')) goToStep(step + 1);
+  };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (step !== 2 || isSubmitting) return;
+    if (!validate('all')) return;
     setIsSubmitting(true);
-
+    setSubmitError(null);
     try {
       const result = await createRepairRequest(formData);
-
-      // Pass the real reference number to the success page via React Router state
-      navigate('/request/success', {
-        state: {
-          referenceNumber: result.reference_number
-        }
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Something went wrong while submitting your request. Please try again.';
-      alert(errorMessage);
+      navigate('/request/success', { state: { referenceNumber: result.reference_number } });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Your request could not be sent. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-12">
-      {!showSummary ? (
-        <div className="space-y-12">
-          <CustomerInformation formData={formData} updateField={updateField} errors={errors} />
-          <DeviceInformation formData={formData} updateField={updateField} errors={errors} />
-          <ServiceSelection formData={formData} updateField={updateField} errors={errors} />
-          <ProblemDescription formData={formData} updateField={updateField} errors={errors} />
-          <ServiceMethod formData={formData} updateField={updateField} errors={errors} />
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-8 scroll-mt-28" noValidate>
+      <ol className="grid grid-cols-3 gap-2" aria-label="Request progress">
+        {steps.map((label, index) => (
+          <li key={label} aria-current={step === index ? 'step' : undefined} className={`border-t-[3px] pt-3 text-xs sm:text-sm font-semibold ${index <= step ? 'border-blue-600 text-[#143c39]' : 'border-[#d7e0d9] text-[#89958e]'}`}>
+            <span className="font-mono mr-1">0{index + 1}</span> {label}
+          </li>
+        ))}
+      </ol>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                if (validateForm()) setShowSummary(true);
-              }}
-              className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-            >
-              Review Request
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          <RequestSummary formData={formData} />
+      <div>
+        <p className="eyebrow mb-2">Step {step + 1} of 3</p>
+        <h2 className="section-heading text-2xl sm:text-3xl font-extrabold text-[#142825]">{steps[step]}</h2>
+        <p className="text-[#61726b] mt-2 text-sm">{step === 0 ? 'How can we reach you, and what device needs help?' : step === 1 ? 'Tell us what needs attention and how you prefer the service.' : 'Check the details before you send your request.'}</p>
+      </div>
 
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => setShowSummary(false)}
-              className="text-gray-600 font-semibold hover:text-gray-900 transition-colors"
-            >
-              ← Edit Information
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:bg-blue-400 flex items-center space-x-2"
-            >
-              {isSubmitting && <Loader2 className="h-5 w-5 animate-spin" />}
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Repair Request'}</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {step === 0 && <div className="space-y-10"><CustomerInformation formData={formData} updateField={updateField} errors={errors} /><DeviceInformation formData={formData} updateField={updateField} errors={errors} /></div>}
+      {step === 1 && <div className="space-y-10"><ServiceSelection formData={formData} updateField={updateField} errors={errors} /><ProblemDescription formData={formData} updateField={updateField} errors={errors} /><ServiceMethod formData={formData} updateField={updateField} errors={errors} /></div>}
+      {step === 2 && <RequestSummary formData={formData} />}
+
+      {submitError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>}
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-[#e2e9e4] pt-6">
+        {step > 0 ? <button type="button" onClick={() => goToStep(step - 1)} className="btn-secondary w-full sm:w-auto"><ArrowLeft className="w-4 h-4" /> Back</button> : <p className="text-sm text-[#718077]">Fields marked * are required.</p>}
+        {step < 2 ? <button type="button" onClick={handleContinue} className="btn-primary w-full sm:w-auto">Continue <ArrowRight className="w-4 h-4" /></button> : <button type="submit" disabled={isSubmitting} className="btn-primary w-full sm:w-auto">{isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />} {isSubmitting ? 'Submitting...' : 'Submit request'}</button>}
+      </div>
     </form>
   );
-};
-
-export default RepairRequestForm;
+}

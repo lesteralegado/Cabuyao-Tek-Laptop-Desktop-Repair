@@ -1,1 +1,64 @@
 @import "tailwindcss";
+
+@theme {
+  --color-blue-50: #edf6f4;
+  --color-blue-100: #d9ebe7;
+  --color-blue-200: #b8d8d2;
+  --color-blue-300: #8abbb2;
+  --color-blue-400: #56998f;
+  --color-blue-500: #287a73;
+  --color-blue-600: #17645f;
+  --color-blue-700: #10534f;
+  --color-blue-800: #0b403e;
+  --color-blue-900: #092f2e;
+}
+
+:root {
+  font-family: "Aptos", "Segoe UI", system-ui, sans-serif;
+  color: #1c2929;
+  background: #f9f8f4;
+  font-synthesis: none;
+}
+
+html { scroll-behavior: smooth; }
+body { min-width: 320px; margin: 0; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+::selection { background: #b8d8d2; color: #092f2e; }
+
+:focus-visible { outline: 3px solid #17645f; outline-offset: 3px; }
+[id] { scroll-margin-top: 5.5rem; }
+
+@layer components {
+  .page-surface { background: #f9f8f4; }
+  .ink-surface { background: #142825; }
+  .eyebrow { color: #17645f; font-size: .75rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .display-heading { font-family: "Aptos Display", "Segoe UI", system-ui, sans-serif; letter-spacing: -.055em; line-height: 1.03; }
+  .section-heading { font-family: "Aptos Display", "Segoe UI", system-ui, sans-serif; letter-spacing: -.04em; line-height: 1.12; }
+  .card-surface { background: #fff; border: 1px solid #e2e9e4; border-radius: 1.5rem; box-shadow: 0 14px 42px -35px #092f2e80; }
+  .field-control { width: 100%; min-height: 3rem; padding: .7rem .9rem; border: 1px solid #cbd8d3; border-radius: .75rem; background: #fff; color: #1c2929; }
+  select.field-control {
+    appearance: none;
+    padding-right: 2.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23536b65' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .9rem center;
+    background-size: 1.1rem;
+    cursor: pointer;
+  }
+  select.field-control:hover:not(:disabled) { border-color: #8abbb2; }
+  select.field-control:disabled { background-color: #f3f5f2; color: #60716a; cursor: not-allowed; }
+  select.field-control option, select.field-control optgroup { background-color: #fff; color: #1c2929; }
+  .field-control:focus { outline: 3px solid #b8d8d2; outline-offset: 1px; border-color: #17645f; }
+  .field-control[aria-invalid="true"] { border-color: #bc4a3c; }
+  .btn-primary { display: inline-flex; min-height: 3rem; align-items: center; justify-content: center; gap: .6rem; padding: .8rem 1.35rem; border-radius: .75rem; background: #17645f; color: white; font-weight: 700; transition: background .2s, transform .2s; }
+  .btn-primary:hover { background: #10534f; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .btn-secondary { display: inline-flex; min-height: 3rem; align-items: center; justify-content: center; gap: .6rem; padding: .8rem 1.35rem; border: 1px solid #cbd8d3; border-radius: .75rem; background: white; color: #143c39; font-weight: 700; transition: border-color .2s, background .2s; }
+  .btn-secondary:hover { border-color: #17645f; background: #edf6f4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

@@ -18,61 +18,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial session check
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
+    let active = true;
+    let generation = 0;
+    let pendingTimer: number | undefined;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      const currentGeneration = ++generation;
+      window.clearTimeout(pendingTimer);
+      setUser(session?.user ?? null);
+      setProfile(null);
+
+      if (!session?.user) {
         setLoading(false);
+        return;
       }
-    };
 
-    initializeAuth();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
-      setLoading(false);
+      setLoading(true);
+      // Supabase calls inside this callback can deadlock. Run the profile query after it returns.
+      pendingTimer = window.setTimeout(() => {
+        void (async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('id, name, role, created_at, updated_at')
+              .eq('id', session.user.id)
+              .single();
+            if (error) throw error;
+            if (active && currentGeneration === generation) {
+              setProfile({
+                id: data.id,
+                name: data.name,
+                role: data.role,
+                createdAt: data.created_at,
+                updatedAt: data.updated_at,
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching profile:', error);
+            if (active && currentGeneration === generation) setProfile(null);
+          } finally {
+            if (active && currentGeneration === generation) setLoading(false);
+          }
+        })();
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      window.clearTimeout(pendingTimer);
+      subscription.unsubscribe();
+    };
   }, []);
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setProfile({
-          id: data.id,
-          name: data.name,
-          role: data.role,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      setProfile(null);
-    }
-  };
 
   const handleSignOut = async () => {
     try {

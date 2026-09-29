@@ -5,37 +5,34 @@ import RepairRequestForm from '../components/RepairRequestForm';
 
 const RepairRequest: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen page-surface flex flex-col">
       <Navbar />
-      <main className="flex-grow pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
-              Request a Repair
+          <div className="mb-10">
+            <p className="eyebrow mb-4">Start here · No account needed</p>
+            <h1 className="display-heading text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#142825] mb-5">
+              Tell us what needs fixing.
             </h1>
-            <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              Tell us about your device and the problem you're experiencing.
-              Submit your request and receive a reference number that you can use to track your repair.
+            <p className="text-[#53645e] max-w-2xl leading-relaxed text-lg">
+              Share a few details about your device. After you submit, we’ll give you a reference number to follow its progress.
             </p>
-            <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
-              No account required.
-            </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
+          <div className="card-surface p-5 sm:p-8 md:p-10">
             <RepairRequestForm />
           </div>
 
-          <div className="mt-12 p-6 bg-blue-50 rounded-2xl border border-blue-100 text-center">
-            <h3 className="text-blue-900 font-bold mb-2">Need immediate help?</h3>
-            <p className="text-blue-700 text-sm mb-4">
-              If this is an emergency or you have urgent questions, feel free to contact us directly.
+          <div className="mt-8 p-6 bg-[#e5f1e9] rounded-2xl border border-[#d8e8dd] sm:flex sm:items-center sm:justify-between gap-6">
+            <div>
+              <h3 className="text-[#143c39] font-bold mb-1">Need to talk to someone?</h3>
+              <p className="text-[#53645e] text-sm">
+                Call or email us if you need help before submitting.
             </p>
-            <div className="flex justify-center space-x-4">
-              <a href="tel:09473019217" className="text-blue-600 font-bold hover:underline">Call Now</a>
-              <span className="text-blue-300">|</span>
-              <a href="mailto:johncomshop01@gmail.com" className="text-blue-600 font-bold hover:underline">Email Us</a>
+            </div>
+            <div className="flex gap-5 mt-4 sm:mt-0 shrink-0">
+              <a href="tel:09473019217" className="text-blue-700 font-bold hover:underline py-2">Call us</a>
+              <a href="mailto:johncomshop01@gmail.com" className="text-blue-700 font-bold hover:underline py-2">Email us</a>
             </div>
           </div>
         </div>

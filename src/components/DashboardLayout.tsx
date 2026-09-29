@@ -8,14 +8,18 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, profile } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen page-surface flex">
       <DashboardSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      <div className="flex-1 md:ml-64 flex flex-col">
-        <header className="h-16 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
+      <div className="flex-1 min-w-0 md:ml-64 flex flex-col">
+        <header className="h-16 bg-[#f9f8f4]/95 backdrop-blur-md border-b border-[#e2e9e4] px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
           <button
+            type="button"
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Open staff menu"
+            aria-controls="staff-navigation"
+            aria-expanded={isSidebarOpen}
+            className="md:hidden w-11 h-11 flex items-center justify-center text-[#142825] hover:bg-white rounded-lg transition-colors"
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -31,7 +35,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1500px] w-full mx-auto">
           {children}
         </main>
       </div>

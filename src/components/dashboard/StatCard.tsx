@@ -9,13 +9,13 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
+    <div className="card-surface p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className={`p-3 rounded-xl ${color}`}>
         {icon}
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-xs sm:text-sm font-medium text-[#61726b]">{title}</p>
+        <p className="text-2xl font-extrabold text-[#142825]">{value}</p>
       </div>
     </div>
   );

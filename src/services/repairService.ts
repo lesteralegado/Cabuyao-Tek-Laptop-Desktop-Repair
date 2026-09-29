@@ -10,53 +10,44 @@ export interface RepairStatistics {
 }
 
 export async function getRepairStatistics(): Promise<RepairStatistics> {
-  const { data, error } = await supabase
-    .from('repair_requests')
-    .select('status');
-
-  if (error) {
-    console.error('Error fetching stats:', error);
+  const statuses: RepairStatus[] = ['received', 'inspection', 'diagnosis', 'waiting_approval', 'repairing'];
+  const [total, requested, inProgress, readyForPickup, completed] = await Promise.all([
+    supabase.from('repair_requests').select('id', { count: 'exact', head: true }),
+    supabase.from('repair_requests').select('id', { count: 'exact', head: true }).eq('status', 'requested'),
+    supabase.from('repair_requests').select('id', { count: 'exact', head: true }).in('status', statuses),
+    supabase.from('repair_requests').select('id', { count: 'exact', head: true }).eq('status', 'ready_for_pickup'),
+    supabase.from('repair_requests').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+  ]);
+  if ([total, requested, inProgress, readyForPickup, completed].some(result => result.error)) {
     throw new Error('Unable to load statistics.');
   }
-
-  const stats: RepairStatistics = {
-    total: data.length,
-    requested: 0,
-    inProgress: 0,
-    readyForPickup: 0,
-    completed: 0,
+  return {
+    total: total.count ?? 0,
+    requested: requested.count ?? 0,
+    inProgress: inProgress.count ?? 0,
+    readyForPickup: readyForPickup.count ?? 0,
+    completed: completed.count ?? 0,
   };
+}
 
-  const inProgressStatuses: RepairStatus[] = ['received', 'inspection', 'diagnosis', 'waiting_approval', 'repairing'];
-
-  data.forEach(req => {
-    if (req.status === 'requested') stats.requested++;
-    else if (inProgressStatuses.includes(req.status)) stats.inProgress++;
-    else if (req.status === 'ready_for_pickup') stats.readyForPickup++;
-    else if (req.status === 'completed') stats.completed++;
-  });
-
-  return stats;
+function applyRepairFilters(query: any, searchQuery?: string, statusFilter?: RepairStatus) {
+  if (statusFilter) query = query.eq('status', statusFilter);
+  if (searchQuery?.trim()) {
+    const escaped = searchQuery.trim().replace(/[\\"]/g, '\\$&');
+    query = query.or(`customer_name.ilike."%${escaped}%",reference_number.ilike."%${escaped}%",device_brand.ilike."%${escaped}%",device_model.ilike."%${escaped}%"`);
+  }
+  return query;
 }
 
 export async function getRecentRepairRequests(
   searchQuery?: string,
   statusFilter?: RepairStatus
 ): Promise<RepairRequest[]> {
-  let query = supabase
+  const query = applyRepairFilters(supabase
     .from('repair_requests')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (statusFilter) {
-    query = query.eq('status', statusFilter);
-  }
-
-  if (searchQuery) {
-    const q = `%${searchQuery.trim().toLowerCase()}%`;
-    query = query.or(`customer_name.ilike.${q}, reference_number.ilike.${q}, device_brand.ilike.${q}, device_model.ilike.${q}`);
-  }
+    .limit(20), searchQuery, statusFilter);
 
   const { data, error } = await query;
 
@@ -66,6 +57,16 @@ export async function getRecentRepairRequests(
   }
 
   return data as RepairRequest[];
+}
+
+export async function getRepairRequestsPage(searchQuery = '', statusFilter?: RepairStatus, page = 0, pageSize = 20) {
+  const query = applyRepairFilters(supabase.from('repair_requests')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(page * pageSize, (page + 1) * pageSize - 1), searchQuery, statusFilter);
+  const { data, count, error } = await query;
+  if (error) throw new Error('Unable to load repair requests.');
+  return { repairs: data as RepairRequest[], total: count ?? 0 };
 }
 
 export async function getRepairRequestById(id: string): Promise<RepairRequest | null> {

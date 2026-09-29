@@ -26,6 +26,18 @@ export type RepairStatus =
   | "completed"
   | "cancelled";
 
+export const repairStatusLabels: Record<RepairStatus, string> = {
+  requested: 'Request Received',
+  received: 'Device Received',
+  inspection: 'Under Inspection',
+  diagnosis: 'Diagnosis',
+  waiting_approval: 'Waiting for Approval',
+  repairing: 'Repair in Progress',
+  ready_for_pickup: 'Ready for Pickup',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
+
 export interface RepairRequestForm {
   customerName: string;
   phone: string;

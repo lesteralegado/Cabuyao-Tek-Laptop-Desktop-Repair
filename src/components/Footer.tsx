@@ -7,9 +7,9 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
+    <footer className="bg-[#142825] text-[#b4c9bd] pt-14 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-14">
           {/* Company Info */}
           <div className="space-y-6">
             <Link to="/" className="flex items-center space-x-2 text-white">
@@ -28,8 +28,8 @@ const Footer: React.FC = () => {
             <h4 className="text-white font-bold mb-6">Contact</h4>
             <ul className="space-y-4">
               <li className="flex items-start space-x-3 text-sm">
-                <Phone className="h-4 w-4 shrink-0 text-blue-500" />
-                <span>{businessInfo.phone}</span>
+                <Phone className="h-4 w-4 shrink-0 text-blue-300" />
+                <a href={`tel:${businessInfo.phone}`} className="hover:text-white">{businessInfo.phone}</a>
               </li>
               <li className="flex items-start space-x-3 text-sm">
                 <Mail className="h-4 w-4 shrink-0 text-blue-500" />
@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
               </li>
               <li className="flex items-start space-x-3 text-sm">
                 <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
-                <span>{businessInfo.location}</span>
+                <span>{businessInfo.location}{businessInfo.landmark && <span className="block mt-1 text-[#8faaa0]">{businessInfo.landmark}</span>}</span>
               </li>
             </ul>
           </div>

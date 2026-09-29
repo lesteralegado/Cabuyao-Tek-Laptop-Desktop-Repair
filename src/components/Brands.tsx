@@ -3,25 +3,26 @@ import { brands } from '../data/content';
 
 const Brands: React.FC = () => {
   return (
-    <section id="brands" className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
+    <section id="brands" className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className="eyebrow mb-4">Familiar devices</p>
+        <h2 className="section-heading text-3xl md:text-4xl font-extrabold text-[#142825] mb-4">
           Brands We Service
         </h2>
-        <p className="text-lg text-gray-600 mb-16 max-w-2xl mx-auto">
+        <p className="text-lg text-[#53645e] mb-10 max-w-2xl">
           We work with many of the most popular laptop and technology brands.
         </p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 items-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 items-center">
           {brands.map((brand) => (
             <div
               key={brand.id}
-              className="flex items-center justify-center p-6 rounded-xl bg-white border border-gray-100 shadow-sm group transition-all hover:shadow-md"
+              className="flex items-center justify-center p-5 min-h-24 rounded-xl bg-[#f9f8f4] border border-[#e2e9e4] group"
             >
               <img
                 src={brand.logoUrl}
                 alt={`${brand.name} logo`}
-                className="h-12 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                className="h-10 w-auto max-w-full object-contain"
                 onError={(e) => {
                   // Fallback to text if image fails to load
                   const target = e.target as HTMLImageElement;
@@ -37,7 +38,7 @@ const Brands: React.FC = () => {
           ))}
         </div>
 
-        <p className="mt-12 text-sm text-gray-400 italic">
+        <p className="mt-8 text-sm text-[#718077]">
           We service devices from popular brands including the ones listed above.
         </p>
       </div>

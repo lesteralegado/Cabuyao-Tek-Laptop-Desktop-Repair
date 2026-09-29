@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import type { RepairStatus, RepairRequest } from '../../types/repair';
-import { allowedTransitions } from '../../types/repair';
+import { allowedTransitions, repairStatusLabels } from '../../types/repair';
 import { updateRepairStatus } from '../../services/repairService';
 import RepairStatusBadge from '../dashboard/RepairStatusBadge';
 
@@ -16,7 +16,9 @@ const RepairManagementPanel: React.FC<RepairManagementPanelProps> = ({ repair, o
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const availableTransitions = allowedTransitions[repair.status];
+  // Cancellation has its own confirmation flow; it must not be a one-click status update.
+  const availableTransitions = allowedTransitions[repair.status].filter(status => status !== 'cancelled');
+  const selectedStatus = availableTransitions.some(status => status === newStatus) ? newStatus : repair.status;
 
   const handleSave = async (statusToSet: RepairStatus) => {
     setIsSaving(true);
@@ -47,44 +49,46 @@ const RepairManagementPanel: React.FC<RepairManagementPanelProps> = ({ repair, o
         <h3 className="text-lg font-bold text-gray-900">Repair Management</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="space-y-2">
           <span className="text-sm text-gray-500 block">Current Status</span>
           <RepairStatusBadge status={repair.status} />
         </div>
 
         <div className="space-y-2">
-          <span className="text-sm text-gray-500 block">Update Status</span>
-          <div className="flex gap-2">
+          <label htmlFor="next-repair-status" className="text-sm font-semibold text-[#30433e] block">Next status</label>
+          <div className="flex flex-col sm:flex-row gap-2 min-w-0">
             <select
-              className="flex-grow px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
-              value={newStatus}
+              id="next-repair-status"
+              className="field-control min-w-0 flex-grow text-sm"
+              value={selectedStatus}
               onChange={(e) => setNewStatus(e.target.value as RepairStatus)}
               disabled={isSaving || availableTransitions.length === 0}
             >
               {availableTransitions.length === 0 ? (
-                <option value={repair.status}>No further updates possible</option>
+                <option value={repair.status}>No further status updates</option>
               ) : (
                 <>
-                  <option value={repair.status}>Current Status</option>
+                  <option value={repair.status}>{repairStatusLabels[repair.status]} (current)</option>
                   {availableTransitions.map(status => (
-                    <option key={status} value={status}>{status.replace('_', ' ')}</option>
+                    <option key={status} value={status}>{repairStatusLabels[status]}</option>
                   ))}
                 </>
               )}
             </select>
             <button
-              onClick={() => handleSave(newStatus)}
-              disabled={isSaving || newStatus === repair.status || availableTransitions.length === 0}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              type="button"
+              onClick={() => handleSave(selectedStatus)}
+              disabled={isSaving || selectedStatus === repair.status || availableTransitions.length === 0}
+              className="btn-primary w-full sm:w-auto sm:shrink-0 text-sm"
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <span>Save</span>}
+              {isSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Updating...</> : 'Update status'}
             </button>
           </div>
         </div>
       </div>
 
-      {repair.status !== 'completed' && repair.status !== 'cancelled' && (
+      {allowedTransitions[repair.status].includes('cancelled') && (
         <div className="pt-4 border-t border-gray-200">
           <button
             onClick={() => setShowCancelConfirm(true)}
@@ -97,7 +101,7 @@ const RepairManagementPanel: React.FC<RepairManagementPanelProps> = ({ repair, o
       )}
 
       {message && (
-        <div className={`p-3 rounded-lg text-sm font-medium ${
+        <div role={message.type === 'error' ? 'alert' : 'status'} className={`p-3 rounded-lg text-sm font-medium ${
           message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
         }`}>
           {message.text}

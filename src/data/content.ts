@@ -10,7 +10,8 @@ import type {
 export const businessInfo: ContactInfo = {
   phone: '09473019217',
   email: 'johncomshop01@gmail.com',
-  location: 'Cabuyao, Laguna',
+  location: 'Blk 8 Lot 84, Southville 1, Marinig, Cabuyao City, Laguna 4025',
+  landmark: 'Near Aqua Sunrise Dew Water Station',
   options: 'Meet-up & Home Service Available',
 };
 

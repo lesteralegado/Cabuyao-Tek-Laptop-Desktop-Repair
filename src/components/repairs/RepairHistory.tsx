@@ -5,7 +5,7 @@ import type { RepairHistoryEntry, RepairStatus } from '../../types/repair';
 
 interface RepairHistoryProps {
   repairId: string;
-  onHistoryUpdated?: () => void;
+  refreshKey?: number;
 }
 
 const STATUS_LABELS: Record<RepairStatus, string> = {
@@ -20,7 +20,7 @@ const STATUS_LABELS: Record<RepairStatus, string> = {
   cancelled: 'Cancelled',
 };
 
-const RepairHistory: React.FC<RepairHistoryProps> = ({ repairId }) => {
+const RepairHistory: React.FC<RepairHistoryProps> = ({ repairId, refreshKey }) => {
   const [history, setHistory] = useState<RepairHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ const RepairHistory: React.FC<RepairHistoryProps> = ({ repairId }) => {
 
   useEffect(() => {
     fetchHistory();
-  }, [repairId]);
+  }, [repairId, refreshKey]);
 
   if (loading) {
     return (

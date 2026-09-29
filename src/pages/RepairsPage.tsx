@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Loader2, Package } from 'lucide-react';
-import { getRecentRepairRequests } from '../services/repairService';
-import type { RepairRequest, RepairStatus } from '../types/repair';
+import { getRepairRequestsPage } from '../services/repairService';
+import { repairStatusLabels, type RepairRequest, type RepairStatus } from '../types/repair';
 import RepairStatusBadge from '../components/dashboard/RepairStatusBadge';
+import RepairMobileList from '../components/dashboard/RepairMobileList';
 
 const RepairsPage: React.FC = () => {
   const [repairs, setRepairs] = useState<RepairRequest[]>([]);
@@ -11,65 +12,65 @@ const RepairsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepairStatus | 'all'>('all');
-
-  const fetchRepairs = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getRecentRepairRequests(
-        searchQuery,
-        statusFilter === 'all' ? undefined : statusFilter
-      );
-      setRepairs(data);
-    } catch (err) {
-      setError('Unable to load repair requests. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
-    fetchRepairs();
-  }, [searchQuery, statusFilter]);
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    getRepairRequestsPage(debouncedSearch, statusFilter === 'all' ? undefined : statusFilter, page)
+      .then(({ repairs: data, total: count }) => {
+        if (active) { setRepairs(data); setTotal(count); }
+      })
+      .catch(() => { if (active) setError('Unable to load repair requests. Please try again.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [debouncedSearch, statusFilter, page]);
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Repairs</h1>
+          <p className="eyebrow mb-2">Service desk</p>
+          <h1 className="display-heading text-4xl font-extrabold text-[#142825]">Repairs</h1>
           <p className="text-gray-500">Manage all repair requests and track their progress.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="card-surface overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-grow">
+            <label htmlFor="repairs-search" className="sr-only">Search repair requests</label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
+              id="repairs-search"
               type="text"
               placeholder="Search repair requests..."
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="field-control pl-9 text-sm"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
             />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="relative sm:min-w-56">
+            <label htmlFor="repairs-filter" className="sr-only">Filter by status</label>
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" />
             <select
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+              id="repairs-filter"
+              className="field-control pl-9 text-sm"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => { setStatusFilter(e.target.value as RepairStatus | 'all'); setPage(0); }}
             >
-              <option value="all">All Statuses</option>
-              <option value="requested">Requested</option>
-              <option value="received">Received</option>
-              <option value="inspection">Inspection</option>
-              <option value="diagnosis">Diagnosis</option>
-              <option value="waiting_approval">Waiting Approval</option>
-              <option value="repairing">Repairing</option>
-              <option value="ready_for_pickup">Ready for Pickup</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">All statuses</option>
+              {Object.entries(repairStatusLabels).map(([status, label]) => (
+                <option key={status} value={status}>{label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -92,7 +93,9 @@ const RepairsPage: React.FC = () => {
               <p className="text-gray-500 font-medium">No repair requests found.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <>
+            <RepairMobileList repairs={repairs} />
+            <table className="hidden lg:table w-full text-left border-collapse">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Reference</th>
@@ -133,9 +136,17 @@ const RepairsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       </div>
+      {total > 0 && <nav aria-label="Repair pages" className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+        <span>Showing {page * 20 + 1}–{Math.min((page + 1) * 20, total)} of {total}</span>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary" disabled={page === 0 || loading} onClick={() => setPage(value => value - 1)}>Previous</button>
+          <button type="button" className="btn-secondary" disabled={(page + 1) * 20 >= total || loading} onClick={() => setPage(value => value + 1)}>Next</button>
+        </div>
+      </nav>}
     </div>
   );
 };

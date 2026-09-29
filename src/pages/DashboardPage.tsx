@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Loader2, AlertCircle, Package } from 'lucide-react';
 import { getRepairStatistics, getRecentRepairRequests, type RepairStatistics } from '../services/repairService';
-import type { RepairRequest, RepairStatus } from '../types/repair';
+import { repairStatusLabels, type RepairRequest, type RepairStatus } from '../types/repair';
 import StatCard from '../components/dashboard/StatCard';
 import RepairStatusBadge from '../components/dashboard/RepairStatusBadge';
+import RepairMobileList from '../components/dashboard/RepairMobileList';
 
 const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<RepairStatistics | null>(null);
@@ -13,40 +14,43 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepairStatus | 'all'>('all');
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [statsData, repairsData] = await Promise.all([
-        getRepairStatistics(),
-        getRecentRepairRequests(searchQuery, statusFilter === 'all' ? undefined : statusFilter),
-      ]);
-      setStats(statsData);
-      setRepairs(repairsData);
-    } catch (err) {
-      setError('Unable to load dashboard data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [searchQuery, statusFilter]);
+    const timer = window.setTimeout(() => setDebouncedSearch(searchQuery), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    Promise.all([
+        getRepairStatistics(),
+        getRecentRepairRequests(debouncedSearch, statusFilter === 'all' ? undefined : statusFilter),
+      ])
+      .then(([statsData, repairsData]) => {
+        if (active) { setStats(statsData); setRepairs(repairsData); }
+      })
+      .catch(() => { if (active) setError('Unable to load dashboard data. Please try again.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [debouncedSearch, statusFilter, retryKey]);
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Dashboard</h1>
+          <p className="eyebrow mb-2">Service desk</p>
+          <h1 className="display-heading text-4xl font-extrabold text-[#142825]">Dashboard</h1>
           <p className="text-gray-500">Overview of your repair service activity.</p>
         </div>
       </div>
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {stats && (
           <>
             <StatCard
@@ -84,38 +88,36 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Recent Repairs Section */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="card-surface overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-gray-900">Recent Repair Requests</h2>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <label htmlFor="dashboard-search" className="sr-only">Search recent repairs</label>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" />
               <input
+                id="dashboard-search"
                 type="text"
                 placeholder="Search repairs..."
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                className="min-h-11 pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative sm:min-w-56">
+              <label htmlFor="dashboard-status-filter" className="sr-only">Filter repairs by status</label>
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden="true" />
               <select
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                id="dashboard-status-filter"
+                className="field-control min-h-11 pl-9 text-sm"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as RepairStatus | 'all')}
               >
-                <option value="all">All Statuses</option>
-                <option value="requested">Requested</option>
-                <option value="received">Received</option>
-                <option value="inspection">Inspection</option>
-                <option value="diagnosis">Diagnosis</option>
-                <option value="waiting_approval">Waiting Approval</option>
-                <option value="repairing">Repairing</option>
-                <option value="ready_for_pickup">Ready for Pickup</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="all">All statuses</option>
+                {Object.entries(repairStatusLabels).map(([status, label]) => (
+                  <option key={status} value={status}>{label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -132,7 +134,7 @@ const DashboardPage: React.FC = () => {
               <AlertCircle className="h-12 w-12 text-red-500" />
               <p className="text-gray-900 font-bold">{error}</p>
               <button
-                onClick={fetchDashboardData}
+                onClick={() => setRetryKey(value => value + 1)}
                 className="text-blue-600 font-semibold hover:underline"
               >
                 Try Again
@@ -147,7 +149,9 @@ const DashboardPage: React.FC = () => {
               <p className="text-sm text-gray-400">Try changing your search or status filter.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <>
+            <RepairMobileList repairs={repairs} />
+            <table className="hidden lg:table w-full text-left border-collapse">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Reference</th>
@@ -192,6 +196,7 @@ const DashboardPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       </div>

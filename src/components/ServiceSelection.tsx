@@ -12,9 +12,9 @@ const ServiceSelection: React.FC<ServiceSelectionProps> = ({ formData, updateFie
   return (
     <div className="space-y-6 mt-8">
       <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">What Do You Need Help With?</h3>
-      <FormField label="Select Service" required error={errors.service}>
+      <FormField id="service" label="Select Service" required error={errors.service}>
         <select
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
+          className="field-control"
           value={formData.service}
           onChange={(e) => updateField('service', e.target.value)}
         >

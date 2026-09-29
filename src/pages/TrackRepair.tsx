@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Search, Package, RefreshCcw, Copy, Check, Phone, Mail } from 'lucide-react';
@@ -7,9 +7,11 @@ import { getRepairStatus } from '../services/repairTrackingService';
 import type { PublicRepairStatus } from '../types/repair';
 import RepairStatusCard from '../components/RepairStatusCard';
 import RepairTimeline from '../components/RepairTimeline';
+import { formatDeviceType } from '../utils/formatDeviceType';
 
 const TrackRepair: React.FC = () => {
-  const [refNumber, setRefNumber] = useState('');
+  const location = useLocation();
+  const [refNumber, setRefNumber] = useState(() => (location.state as { referenceNumber?: string } | null)?.referenceNumber || '');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PublicRepairStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,51 +45,53 @@ const TrackRepair: React.FC = () => {
     }
   };
 
-  const copyRef = () => {
+  const copyRef = async () => {
     if (result?.reference_number) {
-      navigator.clipboard.writeText(result.reference_number);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(result.reference_number);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch { setError('Could not copy the reference number. Please select it manually.'); }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen page-surface flex flex-col">
       <Navbar />
-      <main className="flex-grow pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <main className="flex-grow pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">
-              Track Your Repair
+          <div className="mb-10">
+            <p className="eyebrow mb-4">Repair status · No account needed</p>
+            <h1 className="display-heading text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#142825] mb-5">
+              See where things stand.
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
+            <p className="text-lg text-[#53645e] max-w-2xl">
               Enter your repair reference number to check the current status of your device.
             </p>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
-              No account required.
-            </div>
           </div>
 
           {/* Search Card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10 mb-12">
+          <div className="card-surface p-5 sm:p-8 md:p-10 mb-10">
             <form onSubmit={handleTrack} className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+              <div className="flex-grow min-w-0 relative">
+                <label htmlFor="repair-reference" className="block text-sm font-semibold text-[#30433e] mb-2">Reference number</label>
+                <div className="relative">
+                  <Search className="h-5 w-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+                  <input
+                    id="repair-reference"
+                    type="text"
+                    placeholder="FR-2026-A1B2C3D4E5F6"
+                    className="field-control pl-12 py-3 text-lg uppercase font-mono"
+                    value={refNumber}
+                    onChange={(e) => setRefNumber(e.target.value)}
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="FR-2026-00027"
-                  className="w-full pl-11 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg uppercase font-mono"
-                  value={refNumber}
-                  onChange={(e) => setRefNumber(e.target.value)}
-                />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:bg-blue-400 flex items-center justify-center space-x-2"
+                className="btn-primary w-full md:w-auto md:self-end md:shrink-0 text-lg py-3"
               >
                 {loading ? (
                   <>
@@ -100,24 +104,25 @@ const TrackRepair: React.FC = () => {
               </button>
             </form>
             {error && (
-              <p className="mt-4 text-red-600 text-sm text-center font-medium">{error}</p>
+              <p className="mt-4 text-red-700 text-sm font-medium" role="alert">{error}</p>
             )}
           </div>
 
           {/* Result Section */}
           {result && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+              <div className="card-surface overflow-hidden">
                 <div className="p-6 md:p-10">
                   <div className="flex items-center justify-between mb-8">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">Repair Found</h2>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-lg font-mono font-bold text-blue-600">{result.reference_number}</span>
+                      <div className="flex items-center gap-2 mt-1 min-w-0">
+                        <span className="text-lg font-mono font-bold text-blue-600 break-all">{result.reference_number}</span>
                         <button
+                          type="button"
                           onClick={copyRef}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors text-gray-400 hover:text-blue-600"
-                          title="Copy reference number"
+                          className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-blue-50 rounded-xl transition-colors text-blue-700"
+                          aria-label={copied ? 'Reference number copied' : 'Copy reference number'}
                         >
                           {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                         </button>
@@ -133,7 +138,7 @@ const TrackRepair: React.FC = () => {
                       <div className="flex flex-col">
                         <span className="text-sm text-gray-500 font-medium">Device</span>
                         <span className="text-lg font-bold text-gray-900">
-                          {result.device_type} • {result.device_brand} {result.device_model ? `• ${result.device_model}` : ''}
+                          {formatDeviceType(result.device_type)} • {result.device_brand} {result.device_model ? `• ${result.device_model}` : ''}
                         </span>
                       </div>
                       <div className="flex flex-col">
@@ -161,7 +166,7 @@ const TrackRepair: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
+              <div className="card-surface p-6 md:p-10">
                 <h3 className="text-xl font-bold text-gray-900 mb-8 text-center">Repair Timeline</h3>
                 <RepairTimeline status={result.status} />
               </div>

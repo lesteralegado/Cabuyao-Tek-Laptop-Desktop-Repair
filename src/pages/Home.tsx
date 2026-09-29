@@ -6,14 +6,12 @@ import Networking from '../components/Networking';
 import Brands from '../components/Brands';
 import HowItWorks from '../components/HowItWorks';
 import ServiceOptions from '../components/ServiceOptions';
-import WhyChooseUs from '../components/WhyChooseUs';
 import ContactSection from '../components/ContactSection';
-import FinalCTA from '../components/FinalCTA';
 import Footer from '../components/Footer';
 
 const Home: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen page-surface">
       <Navbar />
       <main>
         <Hero />
@@ -22,9 +20,7 @@ const Home: React.FC = () => {
         <Brands />
         <HowItWorks />
         <ServiceOptions />
-        <WhyChooseUs />
         <ContactSection />
-        <FinalCTA />
       </main>
       <Footer />
     </div>

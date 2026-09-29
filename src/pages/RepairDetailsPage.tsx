@@ -8,16 +8,19 @@ import RepairStatusTimeline from '../components/repairs/RepairStatusTimeline';
 import RepairManagementPanel from '../components/repairs/RepairManagementPanel';
 import StaffNotes from '../components/repairs/StaffNotes';
 import RepairHistory from '../components/repairs/RepairHistory';
+import { formatDeviceType } from '../utils/formatDeviceType';
 
 const RepairDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [repair, setRepair] = useState<RepairRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const fetchDetails = async () => {
     if (!id) return;
     setLoading(true);
+    setError(null);
     try {
       const data = await getRepairRequestById(id);
       setRepair(data);
@@ -56,8 +59,8 @@ const RepairDetailsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-grow pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="w-full">
+      <main className="pb-16">
         <div className="max-w-5xl mx-auto space-y-8">
           <Link to="/repairs" className="inline-flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors mb-6 font-medium">
             <ArrowLeft className="h-4 w-4" />
@@ -110,7 +113,7 @@ const RepairDetailsPage: React.FC = () => {
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <span className="text-sm text-gray-500 block">Device Type</span>
-                        <span className="text-gray-900 font-semibold">{repair.device_type}</span>
+                        <span className="text-gray-900 font-semibold">{formatDeviceType(repair.device_type)}</span>
                       </div>
                       <div>
                         <span className="text-sm text-gray-500 block">Brand</span>
@@ -162,7 +165,7 @@ const RepairDetailsPage: React.FC = () => {
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10">
                 <RepairHistory
                   repairId={repair.id}
-                  onHistoryUpdated={fetchDetails}
+                  refreshKey={historyRefreshKey}
                 />
               </div>
             </div>
@@ -176,7 +179,7 @@ const RepairDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="pt-8 border-t border-gray-100">
-                  <RepairManagementPanel repair={repair} onUpdateSuccess={fetchDetails} />
+                  <RepairManagementPanel repair={repair} onUpdateSuccess={() => { void fetchDetails(); setHistoryRefreshKey(value => value + 1); }} />
                 </div>
               </div>
             </div>

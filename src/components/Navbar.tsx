@@ -9,29 +9,28 @@ const Navbar: React.FC = () => {
     { name: 'Home', href: '/' },
     { name: 'Services', href: '/#services' },
     { name: 'How It Works', href: '/#how-it-works' },
-    { name: 'Brands', href: '/#brands' },
     { name: 'Contact', href: '/#contact' },
   ];
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <nav className="fixed top-0 w-full z-50 bg-[#f9f8f4]/95 backdrop-blur-md border-b border-[#e2e9e4]" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+        <div className="flex justify-between h-[4.5rem] items-center gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <Wrench className="h-6 w-6 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
-              Cabuyao <span className="text-blue-600">Tek</span>
+          <Link to="/" className="flex items-center gap-3 shrink-0" onClick={() => setIsOpen(false)}>
+            <span className="w-9 h-9 rounded-xl bg-[#142825] text-white flex items-center justify-center"><Wrench className="h-5 w-5" /></span>
+            <span className="text-lg font-extrabold text-[#142825] tracking-tight">
+              CABUYAO<span className="text-blue-600">TEK</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center gap-7">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+                className="text-sm font-semibold text-[#52635e] hover:text-blue-600 transition-colors"
               >
                 {link.name}
               </a>
@@ -39,10 +38,14 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-gray-900 focus:outline-none"
+              type="button"
+              aria-label={isOpen ? 'Close menu' : 'Open menu'}
+              aria-controls="mobile-navigation"
+              aria-expanded={isOpen}
+              className="w-11 h-11 flex items-center justify-center rounded-xl border border-[#d8e2dc] text-[#142825] hover:bg-blue-50"
             >
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -52,33 +55,17 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="md:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-6 space-y-1 shadow-lg">
+        <div id="mobile-navigation" className="lg:hidden bg-[#f9f8f4] border-b border-[#e2e9e4] px-4 pt-3 pb-6 space-y-1 shadow-xl">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
               onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+              className="block px-4 py-3 rounded-xl text-base font-semibold text-[#30433e] hover:text-blue-600 hover:bg-white"
             >
               {link.name}
             </a>
           ))}
-          <div className="pt-4 space-y-3">
-            <a
-              href="/track"
-              onClick={() => setIsOpen(false)}
-              className="block w-full text-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-            >
-              Track Repair
-            </a>
-            <a
-              href="/request"
-              onClick={() => setIsOpen(false)}
-              className="block w-full text-center bg-blue-600 text-white px-3 py-3 rounded-lg text-base font-semibold hover:bg-blue-700"
-            >
-              Request a Repair
-            </a>
-          </div>
         </div>
       )}
     </nav>

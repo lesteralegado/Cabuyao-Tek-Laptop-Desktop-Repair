@@ -1,20 +1,23 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import StaffProtectedRoute from './components/StaffProtectedRoute';
-import Home from './pages/Home';
-import RepairRequest from './pages/RepairRequest';
-import RepairRequestSuccess from './pages/RepairRequestSuccess';
-import TrackRepair from './pages/TrackRepair';
-import Login from './pages/Login';
-import DashboardPage from './pages/DashboardPage';
-import RepairDetailsPage from './pages/RepairDetailsPage';
-import RepairsPage from './pages/RepairsPage';
 import DashboardLayout from './components/DashboardLayout';
+
+const Home = lazy(() => import('./pages/Home'));
+const RepairRequest = lazy(() => import('./pages/RepairRequest'));
+const RepairRequestSuccess = lazy(() => import('./pages/RepairRequestSuccess'));
+const TrackRepair = lazy(() => import('./pages/TrackRepair'));
+const Login = lazy(() => import('./pages/Login'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const RepairDetailsPage = lazy(() => import('./pages/RepairDetailsPage'));
+const RepairsPage = lazy(() => import('./pages/RepairsPage'));
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <Suspense fallback={<div className="min-h-screen page-surface flex items-center justify-center text-[#53645e]" role="status">Loading page...</div>}>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
@@ -55,6 +58,7 @@ function App() {
             }
           />
         </Routes>
+        </Suspense>
       </Router>
     </AuthProvider>
   );

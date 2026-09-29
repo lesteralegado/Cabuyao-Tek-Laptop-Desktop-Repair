@@ -40,5 +40,6 @@ export interface ContactInfo {
   phone: string;
   email: string;
   location: string;
+  landmark?: string;
   options: string;
 }

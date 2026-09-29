@@ -12,22 +12,21 @@ const ProblemDescription: React.FC<ProblemDescriptionProps> = ({ formData, updat
     <div className="space-y-6 mt-8">
       <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">Describe the Problem</h3>
 
-      <FormField label="Problem Description" required error={errors.problemDescription}>
+      <FormField id="problemDescription" label="Problem Description" required error={errors.problemDescription} hint="What happened, what is the device doing, and when did it start?">
         <textarea
           rows={4}
           placeholder="Example: My laptop turns on but the screen stays black. It started happening yesterday."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+          className="field-control min-h-32"
           value={formData.problemDescription}
           onChange={(e) => updateField('problemDescription', e.target.value)}
         />
-        <p className="text-xs text-gray-500 mt-2">Please describe what happened, what the device is doing, and when the problem started.</p>
       </FormField>
 
-      <FormField label="Additional Notes">
+      <FormField id="additionalNotes" label="Additional Notes">
         <textarea
           rows={3}
           placeholder="Add anything else you think we should know (e.g. previous repairs, recent changes)..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+          className="field-control min-h-24"
           value={formData.additionalNotes}
           onChange={(e) => updateField('additionalNotes', e.target.value)}
         />

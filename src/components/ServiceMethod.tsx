@@ -17,8 +17,8 @@ const ServiceMethod: React.FC<ServiceMethodProps> = ({ formData, updateField, er
   return (
     <div className="space-y-6 mt-8">
       <h3 className="text-lg font-bold text-gray-900 border-b pb-2 mb-4">How Would You Like the Service?</h3>
-      <FormField label="Select Service Method" required error={errors.serviceMethod}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <FormField id="serviceMethod" label="Select Service Method" required error={errors.serviceMethod}>
+        <div role="radiogroup" aria-labelledby="serviceMethod-label" aria-describedby={errors.serviceMethod ? 'serviceMethod-error' : undefined} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {options.map((opt) => (
             <label
               key={opt.id}
@@ -32,7 +32,7 @@ const ServiceMethod: React.FC<ServiceMethodProps> = ({ formData, updateField, er
                 <input
                   type="radio"
                   name="serviceMethod"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300"
                   value={opt.id}
                   checked={formData.serviceMethod === opt.id}
                   onChange={(e) => updateField('serviceMethod', e.target.value)}
